@@ -1,16 +1,17 @@
 # This file contains the code for generating embeddings.
+from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from bs4 import Tag
 from typing import Optional
+import os
 # from langchain_text_splitters import HTMLSemanticPreservingSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import create_retrieval_chain
 from langchain_core.prompts import PromptTemplate
 from ..utils.web_loader import WebLoader
+load_dotenv()  # Load .env file
 
-# WebLoader().load()
-# print("WebLoader initialized and documents loaded successfully." , WebLoader().load())
 class TravelEmbeddingPipeline:
     def __init__(
         self,
@@ -34,30 +35,28 @@ class TravelEmbeddingPipeline:
         self.use_embeddings = use_embeddings
         self._embedder: Optional[GoogleGenerativeAIEmbeddings] = None
 
-    # def _ensure_embedder(self):
-    #     if not self.use_embeddings:
-    #         return
-    #     if not os.getenv("GOOGLE_API_KEY"):
-    #         raise RuntimeError("GOOGLE_API_KEY not set. Add it to your .env.")
-    #     if self._embedder is None:
-    #         self._embedder = GoogleGenerativeAIEmbeddings(model=self.embed_model)
+    def _ensure_embedder(self):
+        if not self.use_embeddings:
+            return
+        if not os.getenv("GOOGLE_API_KEY"):
+            raise RuntimeError("GOOGLE_API_KEY not set. Add it to your .env.")
+        if self._embedder is None:
+            self._embedder = GoogleGenerativeAIEmbeddings(model=self.embed_model)
 
     def load_docs(self):
-        # Returns List[Document]
         return self.loader.load()
 
     def split_docs(self, docs):
-        # Returns List[Document] chunks
         return self.splitter.split_documents(docs)
 
-    def to_texts(self, docs_or_chunks) -> list[str]:
-        return [d.page_content for d in docs_or_chunks]
+    def to_texts(self, chunks) -> list[str]:
+        return [d.page_content for d in chunks]
 
-    # def embed_texts(self, texts: List[str]):
-    #     self._ensure_embedder()
-    #     if not self._embedder:
-    #         return []
-    #     return self._embedder.embed_documents(texts)
+    def embed_texts(self, texts: list[str]):
+        self._ensure_embedder()
+        if not self._embedder:
+            return []
+        return self._embedder.embed_documents(texts)
 
     def run(self):
         docs = self.load_docs()
@@ -90,9 +89,9 @@ if __name__ == "__main__":
     if texts:
         t0 = texts[0]
         print(f"first chunk chars={len(t0)}, words={len(t0.split())}")
-        print(f"preview: {t0[:300]}...")
-    if chunks: 
-        print(chunks[101])
+        print(f"preview: {t0[:1000]}...")
+    # if chunks: 
+    #     print(chunks[101])
 
 # headers_to_split_on = [
 #     ("h1", "Header 1"),
