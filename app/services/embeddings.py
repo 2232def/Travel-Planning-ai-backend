@@ -1,7 +1,8 @@
 # This file contains the code for generating embeddings.
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from bs4 import Tag
-from langchain_text_splitters import HTMLSemanticPreservingSplitter
+from typing import Optional
+# from langchain_text_splitters import HTMLSemanticPreservingSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import create_retrieval_chain
@@ -15,8 +16,8 @@ class TravelEmbeddingPipeline:
         self,
         chunk_size: int = 800,
         chunk_overlap: int = 120,
-        # embed_model: str = "models/text-embedding-004",  # Google GenAI embeddings
-        # use_embeddings: bool = False,
+        embed_model: str = "models/gemini-embedding-001",  # Google GenAI embeddings
+        use_embeddings: bool = False,
     ):
         self.loader = WebLoader()
         self.splitter = RecursiveCharacterTextSplitter(
@@ -27,19 +28,11 @@ class TravelEmbeddingPipeline:
             separators=[
                 "\n\n",
                 "\n",
-                " ",
-                ".",
-                ",",
-                "\u200b",
-                "\uff0c",
-                "\u3001",
-                "\uff0e",
-                "\u3002",
             ],  # no empty string to avoid regex issues
         )
-        # self.embed_model = embed_model
-        # self.use_embeddings = use_embeddings
-        # self._embedder: Optional[GoogleGenerativeAIEmbeddings] = None
+        self.embed_model = embed_model
+        self.use_embeddings = use_embeddings
+        self._embedder: Optional[GoogleGenerativeAIEmbeddings] = None
 
     # def _ensure_embedder(self):
     #     if not self.use_embeddings:
@@ -57,7 +50,7 @@ class TravelEmbeddingPipeline:
         # Returns List[Document] chunks
         return self.splitter.split_documents(docs)
 
-    def to_texts(self, docs_or_chunks) -> List[str]:
+    def to_texts(self, docs_or_chunks) -> list[str]:
         return [d.page_content for d in docs_or_chunks]
 
     # def embed_texts(self, texts: List[str]):
@@ -70,23 +63,36 @@ class TravelEmbeddingPipeline:
         docs = self.load_docs()
         chunks = self.split_docs(docs)
         texts = self.to_texts(chunks)
-        embeddings = self.embed_texts(texts) if self.use_embeddings else None
+        # embeddings = self.embed_texts(texts) if self.use_embeddings else None
         return {
             "docs": docs,
             "chunks": chunks,
             "texts": texts,
-            "embeddings": embeddings,
+            # "embeddings": embeddings,
         }
 
 
-# if __name__ == "__main__":
-#     pipeline = TravelEmbeddingPipeline(use_embeddings=False)  # set True if GOOGLE_API_KEY is configured
-#     out = pipeline.run()
-#     print(f"docs={len(out['docs'])}, chunks={len(out['chunks'])}")
-#     if out["texts"]:
-#         print(f"first chunk chars={len(out['texts'][0])}, words={len(out['texts'][0].split())}")
-#     if out["embeddings"] is not None:
-#         print(f"embeddings computed: {len(out['embeddings'])}")
+if __name__ == "__main__":
+    # pipeline = TravelEmbeddingPipeline(use_embeddings=False)  # set True if GOOGLE_API_KEY is configured
+    # # out = pipeline.run()
+    # print(f"docs={len(out['docs'])}, chunks={len(out['chunks'])}")
+    # if out["texts"]:
+    #     print(f"first chunk chars={len(out['texts'][0])}, words={len(out['texts'][0].split())}")
+    # if out["embeddings"] is not None:
+    #     print(f"embeddings computed: {len(out['embeddings'])}")
+    out = TravelEmbeddingPipeline().run()
+    docs, chunks, texts = out["docs"], out["chunks"], out["texts"]
+
+    print(f"docs={len(docs)}, chunks={len(chunks)}, texts={len(texts)}")
+    if docs:
+        d0 = docs[0]
+        print(f"doc[0] source={d0.metadata.get('source')}, chars={len(d0.page_content)}, words={len(d0.page_content.split())}")
+    if texts:
+        t0 = texts[0]
+        print(f"first chunk chars={len(t0)}, words={len(t0.split())}")
+        print(f"preview: {t0[:300]}...")
+    if chunks: 
+        print(chunks[101])
 
 # headers_to_split_on = [
 #     ("h1", "Header 1"),
@@ -112,4 +118,3 @@ class TravelEmbeddingPipeline:
 # )
 
 # documents = splitter.split_text()
-# documents 
