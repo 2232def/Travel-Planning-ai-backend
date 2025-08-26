@@ -4,19 +4,22 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from bs4 import Tag
 from typing import Optional
 import os
+import time
 # from langchain_text_splitters import HTMLSemanticPreservingSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import create_retrieval_chain
 from langchain_core.prompts import PromptTemplate
 from ..utils.web_loader import WebLoader
+from google.api_core.exceptions import ResourceExhausted
+from langchain_google_genai._common import GoogleGenerativeAIError
 load_dotenv()  # Load .env file
 
 class TravelEmbeddingPipeline:
     def __init__(
         self,
-        chunk_size: int = 800,
-        chunk_overlap: int = 120,
+        chunk_size: int = 50,
+        chunk_overlap: int = 5,
         embed_model: str = "models/gemini-embedding-001",  # Google GenAI embeddings
         use_embeddings: bool = False,
     ):
@@ -52,44 +55,73 @@ class TravelEmbeddingPipeline:
     def to_texts(self, chunks) -> list[str]:
         return [d.page_content for d in chunks]
 
-    def embed_texts(self, texts: list[str]):
+    def embed_texts(
+        self,
+        texts: list[str],
+        batch_size: int = 100,
+        max_retries: int = 5,
+        base_delay: float = 10.0,
+    ):
         self._ensure_embedder()
         if not self._embedder:
             return []
-        return self._embedder.embed_documents(texts)
-
+        
+        vectors: list[list[float]] = []
+        i = 0
+        while i < len(texts):
+            batch = texts[i : i + batch_size]
+            attempt = 0
+            while True:
+                try:  
+                    vectors.extend(self._embedder.embed_documents(batch))
+                    break
+                except (GoogleGenerativeAIError, ResourceExhausted) as e:
+                    attempt += 1
+                    if attempt >  max_retries:
+                        raise
+                    sleep_s = base_delay * (2 ** (attempt - 1))
+                    if attempt >= 5 and batch_size > 10:
+                        batch_size = max(10, batch_size // 2)
+                        batch = texts[i : i + batch_size]
+                    time.sleep(sleep_s)
+                except Exception:
+                    raise
+                
+            i += batch_size
+        return vectors
+                    
     def run(self):
         docs = self.load_docs()
         chunks = self.split_docs(docs)
         texts = self.to_texts(chunks)
-        # embeddings = self.embed_texts(texts) if self.use_embeddings else None
+        embeddings = self.embed_texts(texts) if self.use_embeddings else None
         return {
             "docs": docs,
             "chunks": chunks,
             "texts": texts,
-            # "embeddings": embeddings,
+            "embeddings": embeddings,
         }
 
 
 if __name__ == "__main__":
-    # pipeline = TravelEmbeddingPipeline(use_embeddings=False)  # set True if GOOGLE_API_KEY is configured
-    # # out = pipeline.run()
-    # print(f"docs={len(out['docs'])}, chunks={len(out['chunks'])}")
-    # if out["texts"]:
-    #     print(f"first chunk chars={len(out['texts'][0])}, words={len(out['texts'][0].split())}")
-    # if out["embeddings"] is not None:
-    #     print(f"embeddings computed: {len(out['embeddings'])}")
-    out = TravelEmbeddingPipeline().run()
-    docs, chunks, texts = out["docs"], out["chunks"], out["texts"]
+    pipeline = TravelEmbeddingPipeline(use_embeddings=True)  # set True if GOOGLE_API_KEY is configured
+    out = pipeline.run()
+    print(f"docs={len(out['docs'])}, chunks={len(out['chunks'])}")
+    if out["texts"]:
+        print(f"first chunk chars={len(out['texts'][0])}, words={len(out['texts'][0].split())}")
+    if out["embeddings"] is not None:
+        print(f"embeddings computed: {len(out['embeddings'])}")
+    # out = TravelEmbeddingPipeline().run()
+    # docs, chunks, texts = out["docs"], out["chunks"], out["texts"]
 
-    print(f"docs={len(docs)}, chunks={len(chunks)}, texts={len(texts)}")
-    if docs:
-        d0 = docs[0]
-        print(f"doc[0] source={d0.metadata.get('source')}, chars={len(d0.page_content)}, words={len(d0.page_content.split())}")
-    if texts:
-        t0 = texts[0]
-        print(f"first chunk chars={len(t0)}, words={len(t0.split())}")
-        print(f"preview: {t0[:1000]}...")
+    # print(f"docs={len(docs)}, chunks={len(chunks)}, texts={len(texts)}")
+    # if docs:
+    #     d0 = docs[0]
+    #     print(f"doc[0] source={d0.metadata.get('source')}, chars={len(d0.page_content)}, words={len(d0.page_content.split())}")
+    # if texts:
+    #     t0 = texts[0]
+    #     print(f"first chunk chars={len(t0)}, words={len(t0.split())}")
+    #     print(f"preview: {t0[:1000]}...")
     # if chunks: 
     #     print(chunks[101])
 
