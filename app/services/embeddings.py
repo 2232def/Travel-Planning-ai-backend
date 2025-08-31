@@ -5,22 +5,24 @@ from bs4 import Tag
 from typing import Optional
 import os
 import time
+from langchain_ollama import OllamaEmbeddings
 # from langchain_text_splitters import HTMLSemanticPreservingSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain_google_genai import GoogleGenerativeAIEmbeddings
+# from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import create_retrieval_chain
 from langchain_core.prompts import PromptTemplate
 from ..utils.web_loader import WebLoader
 from google.api_core.exceptions import ResourceExhausted
-from langchain_google_genai._common import GoogleGenerativeAIError
+# from langchain_google_genai._common import GoogleGenerativeAIError
+from langsmith import traceable
 load_dotenv()  # Load .env file
 
 class TravelEmbeddingPipeline:
     def __init__(
         self,
-        chunk_size: int = 50,
-        chunk_overlap: int = 5,
-        embed_model: str = "models/gemini-embedding-001",  # Google GenAI embeddings
+        chunk_size: int = 500,
+        chunk_overlap: int = 50,
+        embed_model: str = "nomic-embed-text",  # Google GenAI embeddings
         use_embeddings: bool = False,
     ):
         self.loader = WebLoader()
@@ -36,15 +38,17 @@ class TravelEmbeddingPipeline:
         )
         self.embed_model = embed_model
         self.use_embeddings = use_embeddings
-        self._embedder: Optional[GoogleGenerativeAIEmbeddings] = None
+        self._embedder: Optional[OllamaEmbeddings] = None
 
     def _ensure_embedder(self):
         if not self.use_embeddings:
             return
-        if not os.getenv("GOOGLE_API_KEY"):
-            raise RuntimeError("GOOGLE_API_KEY not set. Add it to your .env.")
-        if self._embedder is None:
-            self._embedder = GoogleGenerativeAIEmbeddings(model=self.embed_model)
+        # if not os.getenv("GOOGLE_API_KEY"):
+        #     raise RuntimeError("GOOGLE_API_KEY not set. Add it to your .env.")
+        # if self._embedder is None:
+        #     self._embedder = GoogleGenerativeAIEmbeddings(model=self.embed_model)
+        if self._embedder is None: 
+            self._embedder = OllamaEmbeddings(model=self.embed_model)
 
     def load_docs(self):
         return self.loader.load()
@@ -58,9 +62,9 @@ class TravelEmbeddingPipeline:
     def embed_texts(
         self,
         texts: list[str],
-        batch_size: int = 100,
-        max_retries: int = 5,
-        base_delay: float = 10.0,
+        batch_size: int = 78,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
     ):
         self._ensure_embedder()
         if not self._embedder:
@@ -75,7 +79,7 @@ class TravelEmbeddingPipeline:
                 try:  
                     vectors.extend(self._embedder.embed_documents(batch))
                     break
-                except (GoogleGenerativeAIError, ResourceExhausted) as e:
+                except ( ResourceExhausted) as e:
                     attempt += 1
                     if attempt >  max_retries:
                         raise
@@ -103,14 +107,16 @@ class TravelEmbeddingPipeline:
         }
 
 
-if __name__ == "__main__":
-    pipeline = TravelEmbeddingPipeline(use_embeddings=True)  # set True if GOOGLE_API_KEY is configured
-    out = pipeline.run()
-    print(f"docs={len(out['docs'])}, chunks={len(out['chunks'])}")
-    if out["texts"]:
-        print(f"first chunk chars={len(out['texts'][0])}, words={len(out['texts'][0].split())}")
-    if out["embeddings"] is not None:
-        print(f"embeddings computed: {len(out['embeddings'])}")
+# if __name__ == "__main__":
+#     pipeline = TravelEmbeddingPipeline(use_embeddings=True)  # set True if GOOGLE_API_KEY is configured
+#     out = pipeline.run()
+#     print(f"docs={len(out['docs'])}, chunks={len(out['chunks'])}")
+#     if out["texts"]:
+#         print(f"first chunk chars={len(out['texts'])}, words={len(out['texts'])}")
+#     if out["embeddings"] is not None:
+#         print(f"embeddings computed: {len(out['embeddings'])}")
+
+
     # out = TravelEmbeddingPipeline().run()
     # docs, chunks, texts = out["docs"], out["chunks"], out["texts"]
 
