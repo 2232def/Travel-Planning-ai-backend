@@ -56,8 +56,8 @@ class TravelEmbeddingPipeline:
     def split_docs(self, docs):
         return self.splitter.split_documents(docs)
 
-    def to_texts(self, chunks) -> list[str]:
-        return [d.page_content for d in chunks]
+    def to_texts_and_meta(self, chunks) -> tuple[list[str], list[dict]]:
+        return [c.page_content for c in chunks], [dict(c.metadata) for c in chunks]
 
     def embed_texts(
         self,
@@ -97,12 +97,13 @@ class TravelEmbeddingPipeline:
     def run(self):
         docs = self.load_docs()
         chunks = self.split_docs(docs)
-        texts = self.to_texts(chunks)
+        texts,metadatas = self.to_texts_and_meta(chunks)
         embeddings = self.embed_texts(texts) if self.use_embeddings else None
         return {
             "docs": docs,
             "chunks": chunks,
             "texts": texts,
+            "metadatas": metadatas,
             "embeddings": embeddings,
         }
 

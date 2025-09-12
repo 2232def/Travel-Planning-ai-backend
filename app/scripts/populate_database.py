@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
+from uuid import uuid4
 import os
 load_dotenv()
 from app.services.embeddings import TravelEmbeddingPipeline
@@ -15,16 +16,12 @@ qdrant_client = QdrantClient(
 def create_collection(collection_name):
     qdrant_client.create_collection(
         collection_name,
-        vectors_config={
-            "text_embedding": models.VectorParams(
+        vectors_config=
+             models.VectorParams(
                 size=768,
                 distance=models.Distance.COSINE
             )
-        }
     )
-
-
-
 
 def ingest_data(points): 
     operation_info = qdrant_client.upsert(
@@ -38,11 +35,19 @@ def ingest_data(points):
 if __name__ == "__main__":
     create_collection("travel_plans")
     out = TravelEmbeddingPipeline(use_embeddings=True).run()
+    texts = out["texts"]
+    metas = out["metadatas"]
+    embs = out["embeddings"] or []
+    print(f"Texts: {len(texts)}, Metas: {len(metas)}, Embeddings: {len(embs)}")
+
+    if not embs:
+        raise RuntimeError("No embeddings produced.")
     points = []
     embeddings = out.get("embeddings")
     if embeddings is not None:
-        for i, embedding in enumerate(embeddings):
-            points.append(models.PointStruct(id=i, vector={"text_embedding": embedding}))
+        for txt, emb, meta in zip(texts, embs, metas):
+            payload =  {"text": txt, **meta}
+            points.append(models.PointStruct(id=str(uuid4()), vector=emb, payload=payload))
         print(f"Prepared {len(points)} points for ingestion.")
     else:
         raise ValueError("Embeddings data is missing or None.")
