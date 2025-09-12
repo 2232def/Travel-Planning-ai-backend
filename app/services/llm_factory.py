@@ -1,0 +1,4 @@
+from .llm import generate_query_or_respond
+
+input = {"messages": [{"role": "user", "content": "hello!"}]}
+generate_query_or_respond(input)["messages"][-1].pretty_print()

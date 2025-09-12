@@ -65,15 +65,15 @@ class QdrantRetriever:
         ]
 
 
-if __name__ == "__main__":
-    retriever = QdrantRetriever(
-        collection_name=os.getenv("QDRANT_COLLECTION", "travel_plans"),
-    )
-    query = "Where is Italy located?"
-    results = retriever.search(query, k=2)
-    print("Query:", query)
-    print("Results:", results)
-    print(f"Found {len(results)} results")
-    for i, r in enumerate(results, 1):
-        print(f"{i}. score={r['score']:.4f}")
-        print(r["text"][:200], "...\n")
+# if __name__ == "__main__":
+#     _retriever = QdrantRetriever(
+#         collection_name=os.getenv("QDRANT_COLLECTION", "travel_plans"),
+#     )
+# query = "Where is Italy located?"
+# results = _retriever.search(query, k=2)
+    # print("Query:", query)
+    # print("Results:", results)
+    # print(f"Found {len(results)} results")
+    # for i, r in enumerate(results, 1):
+    #     print(f"{i}. score={r['score']:.4f}")
+    #     print(r["text"][:200], "...\n")
