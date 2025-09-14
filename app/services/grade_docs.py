@@ -104,32 +104,32 @@ def generate_answer(state: MessagesState):
     response = init_chat_model().invoke([{"role": "user", "content": prompt}])
     return {"messages": [response]}
 
-input = {
-    "messages": convert_to_messages(
-        [
-            {
-                "role": "user",
-                "content": "Best things about Jamshedpur?",
-            },
-            {
-                "role": "assistant",
-                "content": "",
-                "tool_calls": [
-                    {
-                        "id": "1",
-                        "name": "retrieve_blog_posts",
-                        "args": {"query": "Best things about Jamshedpur?"},
-                    }
-                ],
-            },
-            {
-                "role": "tool",
-                "content": "From serene lakes and wildlife sanctuaries to well-maintained parks and revered temples, there are plenty of things to see and do in this vibrant city. So in this blog, we will explore some of the best things to do in Jamshedpur with details on location, and timings for an unforgettable adventure 1",
-                "tool_call_id": "1",
-            },
-        ]
-    )
-}
+# input = {
+#     "messages": convert_to_messages(
+#         [
+#             {
+#                 "role": "user",
+#                 "content": "Best things about Jamshedpur?",
+#             },
+#             {
+#                 "role": "assistant",
+#                 "content": "",
+#                 "tool_calls": [
+#                     {
+#                         "id": "1",
+#                         "name": "retrieve_blog_posts",
+#                         "args": {"query": "Best things about Jamshedpur?"},
+#                     }
+#                 ],
+#             },
+#             {
+#                 "role": "tool",
+#                 "content": "From serene lakes and wildlife sanctuaries to well-maintained parks and revered temples, there are plenty of things to see and do in this vibrant city. So in this blog, we will explore some of the best things to do in Jamshedpur with details on location, and timings for an unforgettable adventure 1",
+#                 "tool_call_id": "1",
+#             },
+#         ]
+#     )
+# }
 
-response = generate_answer(input)
-response["messages"][-1].pretty_print()
+# response = generate_answer(input)
+# response["messages"][-1].pretty_print()
