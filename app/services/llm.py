@@ -13,11 +13,11 @@ import os
 if "GOOGLE_API_KEY" not in os.environ:
     os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google AI API key: ")
 
-
-response_model = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    temperature=0,
-)
+def init_chat_model(model_name: str  = "gemini-2.5-flash", temperature: float = 0) -> ChatGoogleGenerativeAI:
+    return ChatGoogleGenerativeAI(
+        model=model_name,
+        temperature=temperature,
+    )
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ def qdrant_retrieve(query: str, k: int = 5) -> list[dict]:
 
 
 # response_model = init_chat_model("gemini-2.5-flash", temperature=0)
-model_with_tools = response_model.bind_tools([qdrant_retrieve])
+model_with_tools = init_chat_model().bind_tools([qdrant_retrieve])
 
 def generate_query_or_respond(state: MessagesState):
     """Call the model to generate a response based on the current state. Given

@@ -14,7 +14,7 @@ from langchain_core.prompts import PromptTemplate
 from ..utils.web_loader import WebLoader
 from google.api_core.exceptions import ResourceExhausted
 # from langchain_google_genai._common import GoogleGenerativeAIError
-from langsmith import traceable
+# from langsmith import traceable
 load_dotenv()  # Load .env file
 
 class TravelEmbeddingPipeline:
