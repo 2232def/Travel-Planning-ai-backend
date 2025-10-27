@@ -39,7 +39,7 @@ def qdrant_retrieve(query: str, k: int = 5) -> list[dict]:
 model_with_tools = init_chat_model().bind_tools([qdrant_retrieve])
 
 def generate_query_or_respond(state: MessagesState):
-    """Call the model to generate a response based on the current state. Given
+    """Call the model to generate a response based on th e current state. Given
     the question, it will decide to retrieve using the retriever tool, or simply respond to the user.
     """
     # response = (

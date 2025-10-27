@@ -19,7 +19,7 @@ def health():
 @router.post("/ask")
 def ask(request: AskRequest):
 
-    state = {"message" : [{"role": "user", "content": request.question}]}
+    state = {"messages" : [{"role": "user", "content": request.question}]}
     try:
         out = generate_query_or_respond(state)
         msg = out["messages"][-1]
