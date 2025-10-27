@@ -45,17 +45,38 @@ graph = workflow.compile()
 
 # display(Image(graph.get_graph().draw_mermaid_png()))
 
-for chunk in graph.stream(
-    {
+async def run_workflow(question: str, k: int = 5) -> str:
+    """
+    Run the agentic RAG workflow for a given question.
+    
+    Args:
+        question: User's travel-related question
+        k: Number of documents to retrieve
+        
+    Returns:
+        Final answer as a string
+    """
+    state = {
         "messages": [
             {
                 "role": "user",
-                "content": "What are the companies is established in Jamshedpur?",
+                "content": question,
             }
         ]
     }
-):
-    for node, update in chunk.items():
-        print("Update from node", node)
-        update["messages"][-1].pretty_print()
-        print("\n\n")
+    
+    result = graph.invoke(state)
+    
+    # Extract the final answer
+    last_message = result["messages"][-1]
+    
+    # Handle different message formats
+    if hasattr(last_message, "content"):
+        content = last_message.content
+        if isinstance(content, list):
+            # Extract text from list format
+            text_content = next((item["text"] for item in content if item.get("type") == "text"), None)
+            return text_content or str(content)
+        return content
+    
+    return str(last_message)
