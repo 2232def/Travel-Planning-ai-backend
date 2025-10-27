@@ -10,10 +10,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 import getpass
 import os
 
-if "GOOGLE_API_KEY" not in os.environ:
-    os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google AI API key: ")
+
 
 def init_chat_model(model_name: str  = "gemini-2.5-flash", temperature: float = 0) -> ChatGoogleGenerativeAI:
+    if "GOOGLE_API_KEY" not in os.environ:
+        os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google AI API key: ")
+        
     return ChatGoogleGenerativeAI(
         model=model_name,
         temperature=temperature,

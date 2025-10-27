@@ -22,7 +22,7 @@ class TravelEmbeddingPipeline:
         self,
         chunk_size: int = 500,
         chunk_overlap: int = 50,
-        embed_model: str = "nomic-embed-text",  # Google GenAI embeddings
+        embed_model: str = "nomic-embed-text", # "gemini-1.5-embed-text" or "nomic-embed-text"
         use_embeddings: bool = False,
     ):
         self.loader = WebLoader()
