@@ -2,10 +2,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
-
 from app.services.workflow import run_workflow
 load_dotenv()
-
 
 # from ..app.services.retriever import QdrantRetriever
 from app.services.llm import generate_query_or_respond
